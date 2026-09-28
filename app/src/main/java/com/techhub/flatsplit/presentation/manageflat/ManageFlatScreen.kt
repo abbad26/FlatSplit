@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.techhub.flatsplit.domain.model.FlatRoom
 import com.techhub.flatsplit.domain.model.User
+import com.techhub.flatsplit.ui.theme.AccentGold
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BgDark
 import com.techhub.flatsplit.ui.theme.TextPrimary
@@ -291,7 +292,8 @@ private fun MemberRow(
 
         Icon(
             imageVector = Icons.Outlined.Person,
-            contentDescription = null
+            contentDescription = null,
+            tint = AccentGold
         )
 
         Spacer(
