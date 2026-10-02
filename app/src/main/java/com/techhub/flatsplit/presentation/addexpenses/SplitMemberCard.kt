@@ -145,5 +145,9 @@ private fun avatarColor(name: String): Color {
 }
 
 private fun formatMoney(amountPaise: Long): String {
-    return "₹%,d".format(amountPaise / 100)
+    return if (amountPaise % 100 == 0L) {
+        "₹%,d".format(amountPaise / 100)
+    } else {
+        "₹%,.2f".format(amountPaise / 100.0)
+    }
 }

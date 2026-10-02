@@ -320,17 +320,24 @@ private fun parseAmountToPaise(
     amount: String
 ): Long {
     return try {
-        amount
-            .toBigDecimal()
-            .movePointRight(2)
-            .longValueExact()
+        val value = amount.toBigDecimalOrNull()
+            ?: return 0L
+
+        if (value.scale() > 2) {
+            return 0L
+        }
+
+        value.movePointRight(2).longValueExact()
     } catch (e: Exception) {
         0L
     }
 }
-
 private fun formatMoney(
     amountPaise: Long
 ): String {
-    return "₹%,d".format(amountPaise / 100)
+    return if (amountPaise % 100 == 0L) {
+        "₹%,d".format(amountPaise / 100)
+    } else {
+        "₹%,.2f".format(amountPaise / 100.0)
+    }
 }

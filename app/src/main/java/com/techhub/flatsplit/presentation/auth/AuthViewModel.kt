@@ -41,15 +41,19 @@ class AuthViewModel @Inject constructor(
         checkAuthentication()
     }
 
-    private fun checkAuthentication(){
-        val isLoggedIn = checkAuthUseCase()
 
-        _startDestination.value =
-            if (isLoggedIn){
-                StartDestination.Home
-            } else{
-                StartDestination.Login
-            }
+    private fun checkAuthentication() {
+        viewModelScope.launch {
+
+            val isLoggedIn = checkAuthUseCase()
+
+            _startDestination.value =
+                if (isLoggedIn) {
+                    StartDestination.Home
+                } else {
+                    StartDestination.Login
+                }
+        }
     }
     fun signInWithGoogle(idToken: String) {
         viewModelScope.launch {

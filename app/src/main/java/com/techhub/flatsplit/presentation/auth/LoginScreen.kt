@@ -123,7 +123,7 @@ fun LoginScreen(
             LoginUiState.Idle -> {
 
                 Column(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 50.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 80.dp),
                     horizontalAlignment = Alignment.Start,
 
                     ) {
@@ -352,7 +352,7 @@ fun AuthOption(
             .background(color = SurfaceRaised.copy(0.3f), shape = RoundedCornerShape(dimensions.large))
             .border(
                 width = 1.dp,
-                color = BorderDefault,
+                color = BorderSubtle,
                 shape = RoundedCornerShape(dimensions.large)
             )
             .clip(
@@ -408,11 +408,12 @@ fun LoginHeader(){
         horizontalAlignment = Alignment.Start
     ) {
 
+        Spacer(modifier = Modifier.height(dimens.large))
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(color = SurfaceRaised.copy(0.3f), shape = RoundedCornerShape(25.dp))
-                .border(width = 1.dp, shape = RoundedCornerShape(25.dp), color = BorderSubtle),
+                .background(color = SurfaceRaised.copy(0.5f), shape = RoundedCornerShape(25.dp))
+                .border(width = 2.dp, shape = RoundedCornerShape(25.dp), color = BorderSubtle),
             contentAlignment = Alignment.Center
         ) {
             Icon(

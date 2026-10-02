@@ -78,7 +78,7 @@ import kotlin.math.sin
                  fontWeight = FontWeight.Bold
              )
              Text(
-                 text = "₹%,d".format(amount / 100),
+                 text = if (amount % 100 == 0L) "₹%,d".format(amount / 100) else "₹%,.2f".format(amount / 100.0),
                  modifier = Modifier.padding(
                      top = AppTheme.dimensions.medium
                  ),

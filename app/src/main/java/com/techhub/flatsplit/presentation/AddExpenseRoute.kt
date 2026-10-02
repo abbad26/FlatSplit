@@ -25,7 +25,13 @@ fun AddExpenseRoute(
         FirebaseAuth.getInstance()
             .currentUser
             ?.uid
-            ?: return
+
+    if (currentUserId == null) {
+        LaunchedEffect(Unit) {
+            navController.popBackStack()
+        }
+        return
+    }
 
     ToastEvent(
         event = viewModel.event
@@ -33,6 +39,13 @@ fun AddExpenseRoute(
 
     LaunchedEffect(room.id) {
         viewModel.loadMembers(room.memberIds)
+    }
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            viewModel.clearSuccess()
+            navController.popBackStack()
+        }
     }
 
     if (uiState.isLoadingMembers) {
@@ -67,10 +80,4 @@ fun AddExpenseRoute(
 
     )
 
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            viewModel.clearSuccess()
-            navController.popBackStack()
-        }
-    }
 }

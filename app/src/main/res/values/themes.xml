@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.FlatSplit" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Normal app theme -->
+    <style name="Theme.FlatSplit" parent="android:style/Theme.Material.NoActionBar">
+        <!-- your existing theme items -->
+    </style>
+
+    <!-- Android system splash theme -->
+    <style
+        name="Theme.FlatSplit.Starting"
+        parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">
+            @color/splash_background
+        </item>
+
+        <item name="windowSplashScreenAnimatedIcon">
+            @drawable/ic_splash_empty
+        </item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.FlatSplit
+        </item>
+
+    </style>
+
 </resources>

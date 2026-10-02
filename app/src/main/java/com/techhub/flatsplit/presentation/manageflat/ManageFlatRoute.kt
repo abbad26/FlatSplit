@@ -23,7 +23,13 @@ fun ManageFlatRoute(
         FirebaseAuth.getInstance()
             .currentUser
             ?.uid
-            ?: return
+
+    if (currentUserId == null) {
+        LaunchedEffect(Unit) {
+            navController.popBackStack()
+        }
+        return
+    }
 
     ToastEvent(
         event = viewModel.event

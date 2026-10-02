@@ -26,7 +26,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -81,4 +82,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     // Material Extended Icons (Optional - required if using icons like Star, Search, etc.)
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
+
+    // build.gradle.kts (app)
+    implementation("androidx.core:core-splashscreen:1.2.0")
 }
