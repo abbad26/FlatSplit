@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,7 +31,8 @@ fun BalanceSummaryCard(
     yourPaid: Long,
     youOwe: Long,
     youGet: Long,
-    memberCount: Int
+    memberCount: Int,
+    totalSettled: Long
 ) {
 
     val dimens = AppTheme.dimensions
@@ -54,24 +56,54 @@ fun BalanceSummaryCard(
             )
         ) {
 
-            Text(
-                text = "Total Spends",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Total Spends",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
 
-            Spacer(
-                modifier = Modifier.height(dimens.medium)
-            )
+                    Spacer(
+                        modifier = Modifier.height(dimens.medium)
+                    )
 
-            Text(
-                text = "₹%.2f".format(totalSpent / 100.0),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TextSecondary
-            )
+                    Text(
+                        text = "₹%.2f".format(totalSpent / 100.0),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary
+                    )
+                }
 
+                Spacer(modifier = Modifier.width(dimens.medium))
+
+                Column(
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Total Settled",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(dimens.medium)
+                    )
+
+
+                    Text(
+                        text = "₹%.2f".format(totalSettled / 100.0),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
             Spacer(
                 modifier = Modifier.height(dimens.medium)
             )

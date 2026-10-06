@@ -3,7 +3,7 @@
 
     <!-- Normal app theme -->
     <style name="Theme.FlatSplit" parent="android:style/Theme.Material.NoActionBar">
-        <!-- your existing theme items -->
+        <!--  existing theme items -->
     </style>
 
     <!-- Android system splash theme -->
@@ -16,7 +16,7 @@
         </item>
 
         <item name="windowSplashScreenAnimatedIcon">
-            @drawable/ic_splash_empty
+            @drawable/ic_launcher_foreground
         </item>
 
         <item name="postSplashScreenTheme">

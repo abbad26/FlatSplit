@@ -31,6 +31,7 @@ data class HomeUiState(
     val totalSpent: Long = 0L,
     val yourPaid: Long = 0L,
     val currentBalance: Long = 0L,
+    val totalSettled: Long = 0L,
 
     val error: String? = null
 )
@@ -93,6 +94,10 @@ class HomeViewModel @Inject constructor(
                             .filter { it.paidBy == currentUserId }
                             .sumOf { it.amount }
 
+                    val totalSettled = settlements
+                        .filter { it.status == "CONFIRMED" }
+                        .sumOf { it.amount }
+
                     HomeUiState(
                         isLoading = false,
                         expenses = expenses,
@@ -100,7 +105,8 @@ class HomeViewModel @Inject constructor(
                         settlements = settlements,
                         totalSpent = totalSpent,
                         yourPaid = yourPaid,
-                        currentBalance = currentBalance
+                        currentBalance = currentBalance,
+                        totalSettled = totalSettled
                     )
 
                 }.collect { state ->

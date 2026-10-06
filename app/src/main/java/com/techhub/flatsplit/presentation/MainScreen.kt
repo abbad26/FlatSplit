@@ -28,6 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.techhub.flatsplit.presentation.auth.AuthViewModel
 import com.techhub.flatsplit.presentation.auth.LoginScreen
+import com.techhub.flatsplit.presentation.feedback.FeedbackScreen
 import com.techhub.flatsplit.presentation.flatroom.FlatsScreen
 import com.techhub.flatsplit.presentation.flatroom.OnFlatCreateScreen
 import com.techhub.flatsplit.presentation.home.HomeScreen
@@ -244,6 +245,9 @@ fun MainScreen(
                     onManageFlat = {
                         navController.navigate("manage_flat")
                     },
+                    onFeedback = {
+                        navController.navigate("feedback")
+                    },
                     onLogout = {
                         authViewModel.logout()
                     }
@@ -260,6 +264,10 @@ fun MainScreen(
                         navController = navController
                     )
                 }
+            }
+
+            composable("feedback"){
+                FeedbackScreen()
             }
         }
     }

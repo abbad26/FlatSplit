@@ -181,7 +181,8 @@ fun HomeScreen(
                                     homeState.currentBalance
                                 else
                                     0L,
-                                memberCount = roomState.selectedRoom?.memberIds?.size ?: 0
+                                memberCount = roomState.selectedRoom?.memberIds?.size ?: 0,
+                                totalSettled =homeState.totalSettled
                             )
                         }
 

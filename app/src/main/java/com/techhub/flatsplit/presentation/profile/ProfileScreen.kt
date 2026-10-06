@@ -43,6 +43,7 @@ import com.techhub.flatsplit.ui.theme.TextSecondary
 @Composable
 fun ProfileScreen(
     onManageFlat: () -> Unit,
+    onFeedback: () -> Unit,
     onLogout: () -> Unit
 ) {
 
@@ -106,7 +107,7 @@ fun ProfileScreen(
                 onManageFlat = {
                     onManageFlat()
                 },
-                onFeedback = {}
+                onFeedback = { onFeedback()}
 
             )
             Spacer(modifier = Modifier.height(dimens.large))
