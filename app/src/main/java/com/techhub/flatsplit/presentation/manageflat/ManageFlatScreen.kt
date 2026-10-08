@@ -10,14 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,9 +37,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.techhub.flatsplit.domain.model.FlatRoom
 import com.techhub.flatsplit.domain.model.User
+import com.techhub.flatsplit.presentation.components.PulseAnimation
 import com.techhub.flatsplit.ui.theme.AccentGold
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BgDark
+import com.techhub.flatsplit.ui.theme.NegativeRose
+import com.techhub.flatsplit.ui.theme.NegativeRoseBg
 import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary
 
@@ -46,10 +52,14 @@ fun ManageFlatScreen(
     members: List<User>,
     currentUserId: String,
     isActionLoading: Boolean,
+    isLoading: Boolean,
     errorMessage: String?,
+    currentUserBalance: Long,
     onBack: () -> Unit,
     onRemoveMember: (String) -> Unit,
-    onDeleteFlat: () -> Unit
+    onDeleteFlat: () -> Unit,
+    onLeaveFlat: () -> Unit,
+    onLeaveFlatBlocked: () -> Unit
 ) {
 
     val dimens = AppTheme.dimensions
@@ -57,6 +67,10 @@ fun ManageFlatScreen(
     var memberToRemove by remember { mutableStateOf<User?>(null) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val isOwner = currentUserId == room.createdBy
+
+    var showLeaveDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -114,11 +128,14 @@ fun ManageFlatScreen(
                     modifier = Modifier.height(dimens.smallMedium)
                 )
 
-                Text(
-                    text = "Invite code: ${room.inviteCode}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
-                )
+                if (isOwner){
+                    Text(
+                        text = "Invite code: ${room.inviteCode}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                }
             }
 
             item {
@@ -135,20 +152,50 @@ fun ManageFlatScreen(
                 )
             }
 
+
             items(
                 items = members,
                 key = { it.id }
             ) { member ->
 
-                MemberRow(
-                    member = member,
-                    isOwner = member.id == room.createdBy,
-                    isCurrentUser = member.id == currentUserId,
-                    enabled = !isActionLoading,
-                    onRemove = {
-                        memberToRemove = member
+                    MemberRow(
+                        member = member,
+                        isOwner = member.id == room.createdBy,
+                        isCurrentUser = member.id == currentUserId,
+                        canRemove = isOwner && member.id != room.createdBy,
+                        enabled = !isActionLoading,
+                        onRemove = {
+                            memberToRemove = member
+                        }
+                    )
+            }
+            if (!isOwner) {
+                item {
+                    Button(
+                        onClick = {
+                            if (currentUserBalance == 0L) {
+                                showLeaveDialog = true
+                            } else {
+                                onLeaveFlatBlocked()
+                            }
+                        },
+                        enabled =!isLoading && !isActionLoading,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NegativeRoseBg.copy(alpha = 0.8f)
+                        )
+                    ) {
+                        if (isLoading){
+                            PulseAnimation(modifier = Modifier.size(14.dp), color = AccentGold)
+                        } else{
+                            Text(
+                                text = "Leave Flat",
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                        }
                     }
-                )
+                }
             }
 
             item {
@@ -168,6 +215,27 @@ fun ManageFlatScreen(
                     Spacer(
                         modifier = Modifier.height(dimens.medium)
                     )
+                }
+
+                if (!isOwner){
+                    Row(
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = "warning",
+                            tint = NegativeRose,
+                            modifier = Modifier.size(12.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(dimens.medium))
+                        Text(
+                            text = "Only owner can manage flat",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = NegativeRose
+                        )
+
+                    }
                 }
 
                 Button(
@@ -274,6 +342,44 @@ fun ManageFlatScreen(
             }
         )
     }
+
+
+    if (showLeaveDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showLeaveDialog = false
+            },
+            title = {
+                Text("Leave ${room.name}?")
+            },
+            text = {
+                Text(
+                    "You will no longer have access to this flat's " +
+                            "expenses and settlement records."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLeaveDialog = false
+                        onLeaveFlat()
+                    },
+                    enabled = !isActionLoading
+                ) {
+                    Text("Leave Flat")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showLeaveDialog = false
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 
@@ -283,6 +389,7 @@ private fun MemberRow(
     isOwner: Boolean,
     isCurrentUser: Boolean,
     enabled: Boolean,
+    canRemove: Boolean,
     onRemove: () -> Unit
 ) {
     Row(
@@ -321,7 +428,7 @@ private fun MemberRow(
             )
         }
 
-        if (!isOwner && !isCurrentUser) {
+        if (canRemove) {
             TextButton(
                 onClick = onRemove,
                 enabled = enabled

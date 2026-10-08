@@ -89,7 +89,9 @@ fun BalanceSummaryCard(
                 ) {
                     Text(
                         text = "Total Settled",
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
                     )
 
                     Spacer(
@@ -100,7 +102,8 @@ fun BalanceSummaryCard(
                     Text(
                         text = "₹%.2f".format(totalSettled / 100.0),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary
                     )
                 }
             }

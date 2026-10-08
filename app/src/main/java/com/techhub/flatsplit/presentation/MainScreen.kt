@@ -258,12 +258,11 @@ fun MainScreen(
 
                 val room = roomState.selectedRoom
 
-                if (room != null) {
+               // if (room != null) {
                     ManageFlatRoute(
                         room = room,
                         navController = navController
                     )
-                }
             }
 
             composable("feedback"){

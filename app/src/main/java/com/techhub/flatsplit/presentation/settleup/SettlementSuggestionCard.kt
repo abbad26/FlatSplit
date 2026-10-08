@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.techhub.flatsplit.domain.model.settlement.Settlement
@@ -30,6 +31,7 @@ import com.techhub.flatsplit.ui.theme.AccentGold
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BorderSubtle
 import com.techhub.flatsplit.ui.theme.NegativeRose
+import com.techhub.flatsplit.ui.theme.SurfaceRaised
 import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary
 
@@ -54,7 +56,10 @@ fun SettlementSuggestionCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(width = 1.dp, color = BorderSubtle)
+        border = BorderStroke(width = 1.dp, color = BorderSubtle),
+        colors = CardDefaults.cardColors(
+            containerColor = SurfaceRaised
+        )
     ) {
 
         Column(

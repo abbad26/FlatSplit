@@ -4,17 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.techhub.flatsplit.domain.model.FlatRoom
 import com.techhub.flatsplit.domain.model.User
+import com.techhub.flatsplit.domain.usecase.GetRoomExpensesUseCase
 import com.techhub.flatsplit.domain.usecase.GetUsersUseCase
 import com.techhub.flatsplit.domain.usecase.manageflatusecase.DeleteFlatUseCase
 import com.techhub.flatsplit.domain.usecase.manageflatusecase.RemoveMemberUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.CalculateBalanceUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.GetRoomSettlementUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,6 +28,9 @@ class ManageFlatViewModel @Inject constructor(
     private val getUsersUseCase: GetUsersUseCase,
     private val removeMemberUseCase: RemoveMemberUseCase,
     private val deleteFlatUseCase: DeleteFlatUseCase,
+    private val getRoomExpensesUseCase: GetRoomExpensesUseCase,
+    private val getRoomSettlementUseCase: GetRoomSettlementUseCase,
+    private val calculateBalanceUseCase: CalculateBalanceUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ManageFlatUiState())
@@ -31,38 +39,72 @@ class ManageFlatViewModel @Inject constructor(
     private val _event = MutableSharedFlow<String>()
     val event: SharedFlow<String> = _event.asSharedFlow()
 
+    private var roomDataJob: Job? = null
+    fun leaveFlatBlocked() {
+        viewModelScope.launch {
+            _event.emit(
+                "Please settle your balance before leaving the flat."
+            )
+        }
+    }
 
-    fun loadRoom(room: FlatRoom) {
-
+    fun loadRoom(
+        room: FlatRoom,
+        currentUserId: String
+    ) {
         viewModelScope.launch {
             try {
+                roomDataJob?.cancel()
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = true,
                     room = room,
-                    error = null
+                    error = null,
+                    currentBalance = 0L
                 )
+
                 val users = getUsersUseCase(room.memberIds)
 
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
                     room = room,
-                    members = users,
-                    error = null
+                    members = users
                 )
 
+                roomDataJob = launch {
+                    combine(
+                        getRoomExpensesUseCase(room.id),
+                        getRoomSettlementUseCase(room.id)
+                    ) { expenses, settlements ->
+
+                        val balances = calculateBalanceUseCase(
+                            expenses = expenses,
+                            members = room.memberIds,
+                            settlements = settlements
+                        )
+
+                        val currentBalance = balances
+                            .firstOrNull { it.userId == currentUserId }
+                            ?.balance ?: 0L
+                        currentBalance
+                    }.collect { currentBalance ->
+
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            currentBalance = currentBalance,
+                            error = null
+                        )
+                    }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message
-                        ?: "Failed to load flat"
+                    error = e.message ?: "Failed to load flat"
                 )
             }
         }
     }
-
 
     fun removeMember(
         memberId: String
@@ -175,5 +217,6 @@ data class ManageFlatUiState(
     val room: FlatRoom? = null,
     val members: List<User> = emptyList(),
     val error: String? = null,
+    val currentBalance: Long = 0L,
     val isDeleted: Boolean = false
 )

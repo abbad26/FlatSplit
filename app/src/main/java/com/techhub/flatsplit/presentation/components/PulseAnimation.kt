@@ -36,7 +36,7 @@ fun PulseAnimation(
 
     Box(
         modifier = Modifier
-            .size(90.dp)
+            .size(60.dp)
             .graphicsLayer {
                 scaleX = progress
                 scaleY = progress
