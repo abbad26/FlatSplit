@@ -33,10 +33,33 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveUser(user: User) {
-        firestore
+        val userRef = firestore
             .collection("users")
             .document(user.id)
-            .set(user)
+
+        val snapshot = userRef.get().await()
+
+        if (snapshot.exists()) {
+            // Update Google profile fields only.
+            // Preserve the existing UPI ID.
+            userRef.update(
+                mapOf(
+                    "id" to user.id,
+                    "name" to user.name,
+                    "email" to user.email,
+                    "photoUrl" to user.photoUrl
+                )
+            ).await()
+        } else {
+            // First-time user: create the complete document.
+            userRef.set(user).await()
+        }
+    }
+    override suspend fun updateUpiId(userId: String, upiId: String) {
+        firestore
+            .collection("users")
+            .document(userId)
+            .update("upiId", upiId.trim())
             .await()
     }
 }

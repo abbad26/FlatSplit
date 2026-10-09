@@ -8,6 +8,8 @@ data class Settlement(
     val fromUserId: String = "",
     val toUserId: String = "",
     val amount: Long = 0L,
+    val paymentMethod: String = "CASH",
+    val transactionId: String? = null,
     val status: String = "PENDING",
     val createdAt: Timestamp = Timestamp.now(),
     val confirmedAt: Timestamp? = null

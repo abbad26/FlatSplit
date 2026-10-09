@@ -9,4 +9,10 @@ interface UserRepository {
     suspend fun getUsers(userIds: List<String>): List<User>
 
     suspend fun saveUser(user: User)
+
+    suspend fun updateUpiId(
+        userId: String,
+        upiId: String
+    )
+
 }

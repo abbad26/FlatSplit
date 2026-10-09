@@ -11,18 +11,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults.buttonColors
-import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.techhub.flatsplit.domain.model.settlement.Settlement
@@ -31,6 +40,7 @@ import com.techhub.flatsplit.ui.theme.AccentGold
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BorderSubtle
 import com.techhub.flatsplit.ui.theme.NegativeRose
+import com.techhub.flatsplit.ui.theme.NegativeRoseBg
 import com.techhub.flatsplit.ui.theme.SurfaceRaised
 import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary
@@ -42,21 +52,35 @@ fun SettlementSuggestionCard(
     toName: String,
     currentUserId: String,
     pendingSettlement: Settlement?,
-    onSettle: () -> Unit,
-    onConfirm: () -> Unit
+    toUpiId: String?,
+    onPayWithUpi: () -> Unit,
+    onPayWithCash: () -> Unit,
+    onConfirm: () -> Unit,
+    onNotReceived: () -> Unit
 ) {
 
     val dimens = AppTheme.dimensions
 
-    val isUserDebtor = suggestion.fromUserId == currentUserId
-    val isUserCreditor = suggestion.toUserId == currentUserId
+    var showPaymentDialog by remember {
+        mutableStateOf(false)
+    }
 
-    val hasPendingSettlement = pendingSettlement != null
+    val isUserDebtor =
+        suggestion.fromUserId == currentUserId
+
+    val isUserCreditor =
+        suggestion.toUserId == currentUserId
+
+    val hasPendingSettlement =
+        pendingSettlement != null
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(width = 1.dp, color = BorderSubtle),
+        border = BorderStroke(
+            width = 1.dp,
+            color = BorderSubtle
+        ),
         colors = CardDefaults.cardColors(
             containerColor = SurfaceRaised
         )
@@ -121,10 +145,12 @@ fun SettlementSuggestionCard(
                 isUserDebtor && !hasPendingSettlement -> {
 
                     Button(
-                        onClick = onSettle,
+                        onClick = {
+                            showPaymentDialog = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(22.dp),
-                        colors = buttonColors(
+                        colors = ButtonDefaults.buttonColors(
                             containerColor = AccentGold
                         )
                     ) {
@@ -144,23 +170,124 @@ fun SettlementSuggestionCard(
                     )
                 }
 
-                // You are the creditor and need to confirm
+                // creditor need to confirm
                 isUserCreditor && hasPendingSettlement -> {
-
-                    Button(
-                        onClick = onConfirm,
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = buttonColors(
-                            containerColor = AccentGold
-                        )
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Confirm Payment")
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AccentGold
+                            )
+                        ) {
+                            Text(
+                                text = "Received",
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.Black
+                                )
+                        }
+
+                        Button (
+                            onClick = onNotReceived,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NegativeRoseBg
+                            )
+                        ) {
+                            Text(
+                                text = "Not received",
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                        }
                     }
-                }
-            }
+                }            }
         }
     }
+
+    // Payment method dialog
+    if (showPaymentDialog) {
+
+        AlertDialog(
+            onDismissRequest = {
+                showPaymentDialog = false
+            },
+
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Choose payment method",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    IconButton(
+                        onClick = {
+                            showPaymentDialog = false
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = NegativeRose
+                        )
+                    }
+                }
+            },
+
+            text = {
+                Text(
+                    text = "You owe $toName ${formatMoney(suggestion.amount)}"
+                )
+            },
+
+            confirmButton = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    Button(
+                        onClick = {
+                            if (!toUpiId.isNullOrBlank()) {
+                                showPaymentDialog = false
+                                onPayWithUpi()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !toUpiId.isNullOrBlank()
+                    ) {
+                        Text(
+                            text = if (toUpiId.isNullOrBlank()) {
+                                "UPI unavailable"
+                            } else {
+                                "Pay with UPI"
+                            }
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            showPaymentDialog = false
+                            onPayWithCash()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cash")
+                    }
+                }
+            },
+
+            containerColor = SurfaceRaised,
+        )    }
 }
 
 private fun formatMoney(amountPaise: Long): String {
@@ -190,7 +317,6 @@ private fun InitialNameCircle(
             ),
         contentAlignment = Alignment.Center
     ) {
-
         Text(
             text = initialName,
             color = Color.White,

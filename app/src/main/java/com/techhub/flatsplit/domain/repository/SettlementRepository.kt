@@ -13,7 +13,7 @@ interface SettlementRepository {
         roomId: String
     ): Flow<List<Settlement>>
 
-    suspend fun confirmSettlement(
-        settlementId: String
-    )
+    suspend fun confirmSettlement(settlementId: String)
+
+    suspend fun markNotReceived(settlementId: String)
 }

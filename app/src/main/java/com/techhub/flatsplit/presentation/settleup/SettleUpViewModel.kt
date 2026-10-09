@@ -12,6 +12,7 @@ import com.techhub.flatsplit.domain.usecase.settlementusecase.ConfirmSettlementU
 import com.techhub.flatsplit.domain.usecase.settlementusecase.CreateSettlementUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.GenerateSettlementUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.GetRoomSettlementUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.MarkSettlementNotReceivedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -31,7 +32,8 @@ class SettleUpViewModel @Inject constructor(
     private val calculateBalanceUseCase: CalculateBalanceUseCase,
     private val generateSettlementUseCase: GenerateSettlementUseCase,
     private val createSettlementUseCase: CreateSettlementUseCase,
-    private val confirmSettlementUseCase: ConfirmSettlementUseCase
+    private val confirmSettlementUseCase: ConfirmSettlementUseCase,
+    private val markSettlementNotReceivedUseCase: MarkSettlementNotReceivedUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettleUpUiState())
@@ -69,10 +71,9 @@ class SettleUpViewModel @Inject constructor(
                         settlements = settlements
                     )
 
-                    val suggestions =
-                        generateSettlementUseCase(
-                            balances = balances
-                        )
+                    val suggestions = generateSettlementUseCase(
+                        balances = balances
+                    )
 
                     SettleUpUiState(
                         isLoading = false,
@@ -89,9 +90,7 @@ class SettleUpViewModel @Inject constructor(
                 }
 
             } catch (e: CancellationException) {
-
                 throw e
-
             } catch (e: Exception) {
 
                 _uiState.value = SettleUpUiState(
@@ -107,19 +106,22 @@ class SettleUpViewModel @Inject constructor(
         roomId: String,
         fromUserId: String,
         toUserId: String,
-        amount: Long
+        amount: Long,
+        paymentMethod: String,
+        transactionId: String? = null
     ) {
 
         viewModelScope.launch {
 
             try {
-
                 val settlement = Settlement(
                     id = UUID.randomUUID().toString(),
                     roomId = roomId,
                     fromUserId = fromUserId,
                     toUserId = toUserId,
                     amount = amount,
+                    paymentMethod = paymentMethod,
+                    transactionId = transactionId,
                     status = "PENDING",
                     createdAt = Timestamp.now()
                 )
@@ -161,6 +163,22 @@ class SettleUpViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error = e.message
                         ?: "Failed to confirm settlement"
+                )
+            }
+        }
+    }
+
+
+    fun markNotReceived(settlementId: String) {
+        viewModelScope.launch {
+            try {
+                markSettlementNotReceivedUseCase(settlementId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                        ?: "Failed to update settlement."
                 )
             }
         }

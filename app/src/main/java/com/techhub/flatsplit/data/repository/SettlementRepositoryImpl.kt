@@ -63,4 +63,16 @@ class SettlementRepositoryImpl @Inject constructor(
             )
             .await()
     }
-}
+
+    override suspend fun markNotReceived(
+        settlementId: String
+    ) {
+        firestore
+            .collection("settlements")
+            .document(settlementId)
+            .update(
+                "status",
+                "NOT_RECEIVED"
+            )
+            .await()
+    }}
