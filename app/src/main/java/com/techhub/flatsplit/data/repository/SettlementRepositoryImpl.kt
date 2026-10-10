@@ -1,5 +1,6 @@
 package com.techhub.flatsplit.data.repository
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.techhub.flatsplit.domain.model.settlement.Settlement
 import com.techhub.flatsplit.domain.repository.SettlementRepository
@@ -75,4 +76,35 @@ class SettlementRepositoryImpl @Inject constructor(
                 "NOT_RECEIVED"
             )
             .await()
-    }}
+    }
+
+    override suspend fun startSettlementPayment(
+        settlementId: String,
+        paymentMethod: String,
+        transactionId: String?
+    ) {
+        firestore
+            .collection("settlements")
+            .document(settlementId)
+            .update(
+                mapOf(
+                    "status" to "PENDING",
+                    "paymentMethod" to paymentMethod,
+                    "transactionId" to transactionId,
+                    "confirmedAt" to null
+                )
+            )
+            .await()
+    }
+
+    override suspend fun dismissHomeRequest(settlementId: String, userId: String) {
+        firestore
+            .collection("settlements")
+            .document(settlementId)
+            .update(
+                "homeDismissedBy",
+                FieldValue.arrayUnion(userId)
+            )
+            .await()
+    }
+}

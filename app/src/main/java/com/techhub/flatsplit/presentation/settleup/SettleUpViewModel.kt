@@ -10,9 +10,11 @@ import com.techhub.flatsplit.domain.usecase.GetUsersUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.CalculateBalanceUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.ConfirmSettlementUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.CreateSettlementUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.DismissHomeRequestUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.GenerateSettlementUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.GetRoomSettlementUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.MarkSettlementNotReceivedUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.StartSettlementPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -33,7 +35,9 @@ class SettleUpViewModel @Inject constructor(
     private val generateSettlementUseCase: GenerateSettlementUseCase,
     private val createSettlementUseCase: CreateSettlementUseCase,
     private val confirmSettlementUseCase: ConfirmSettlementUseCase,
-    private val markSettlementNotReceivedUseCase: MarkSettlementNotReceivedUseCase
+    private val markSettlementNotReceivedUseCase: MarkSettlementNotReceivedUseCase,
+    private val startSettlementPaymentUseCase: StartSettlementPaymentUseCase,
+    private val dismissHomeRequestUseCase: DismissHomeRequestUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettleUpUiState())
@@ -179,6 +183,84 @@ class SettleUpViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error = e.message
                         ?: "Failed to update settlement."
+                )
+            }
+        }
+    }
+
+    fun requestSettlement(
+        roomId: String,
+        fromUserId: String,
+        toUserId: String,
+        amount: Long
+    ) {
+        viewModelScope.launch {
+            try {
+                val settlement = Settlement(
+                    id = UUID.randomUUID().toString(),
+                    roomId = roomId,
+                    fromUserId = fromUserId,
+                    toUserId = toUserId,
+                    amount = amount,
+                    paymentMethod = "",
+                    transactionId = null,
+                    status = "REQUESTED",
+                    createdAt = Timestamp.now(),
+                    homeDismissedBy = emptyList()
+                )
+
+                createSettlementUseCase(settlement)
+
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                        ?: "Failed to request payment."
+                )
+            }
+        }
+    }
+
+    fun startSettlementPayment(
+        settlementId: String,
+        paymentMethod: String,
+        transactionId: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                startSettlementPaymentUseCase(
+                    settlementId = settlementId,
+                    paymentMethod = paymentMethod,
+                    transactionId = transactionId
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                        ?: "Failed to update payment request."
+                )
+            }
+        }
+    }
+
+    fun dismissHomeRequest(
+        settlementId: String,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            try {
+                dismissHomeRequestUseCase(
+                    settlementId = settlementId,
+                    userId = userId
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                        ?: "Failed to dismiss request notification."
                 )
             }
         }

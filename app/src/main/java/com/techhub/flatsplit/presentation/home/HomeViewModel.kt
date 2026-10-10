@@ -9,6 +9,7 @@ import com.techhub.flatsplit.domain.model.settlement.Settlement
 import com.techhub.flatsplit.domain.usecase.GetRoomExpensesUseCase
 import com.techhub.flatsplit.domain.usecase.GetUsersUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.CalculateBalanceUseCase
+import com.techhub.flatsplit.domain.usecase.settlementusecase.DismissHomeRequestUseCase
 import com.techhub.flatsplit.domain.usecase.settlementusecase.GetRoomSettlementUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -32,7 +33,7 @@ data class HomeUiState(
     val yourPaid: Long = 0L,
     val currentBalance: Long = 0L,
     val totalSettled: Long = 0L,
-
+    val actionError: String? = null,
     val error: String? = null
 )
 @HiltViewModel
@@ -40,7 +41,8 @@ class HomeViewModel @Inject constructor(
     private val getRoomSettlementUseCase: GetRoomSettlementUseCase,
     private val getRoomExpensesUseCase: GetRoomExpensesUseCase,
     private val getUsersUseCase: GetUsersUseCase,
-    private val calculateBalanceUseCase: CalculateBalanceUseCase
+    private val calculateBalanceUseCase: CalculateBalanceUseCase,
+    private val dismissHomeRequestUseCase: DismissHomeRequestUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -125,6 +127,33 @@ class HomeViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun dismissHomeRequest(
+        settlementId: String,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            try {
+                dismissHomeRequestUseCase(
+                    settlementId = settlementId,
+                    userId = userId
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    actionError = e.message
+                        ?: "Failed to dismiss payment notification."
+                )
+            }
+        }
+    }
+
+    fun clearActionError() {
+        _uiState.value = _uiState.value.copy(
+            actionError = null
+        )
     }
     override fun onCleared() {
         roomDataJob?.cancel()

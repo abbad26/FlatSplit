@@ -16,4 +16,15 @@ interface SettlementRepository {
     suspend fun confirmSettlement(settlementId: String)
 
     suspend fun markNotReceived(settlementId: String)
+
+    suspend fun startSettlementPayment(
+        settlementId: String,
+        paymentMethod: String,
+        transactionId: String?
+    )
+
+    suspend fun dismissHomeRequest(
+        settlementId: String,
+        userId: String
+    )
 }

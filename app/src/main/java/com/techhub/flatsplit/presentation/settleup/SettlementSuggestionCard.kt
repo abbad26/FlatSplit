@@ -56,23 +56,19 @@ fun SettlementSuggestionCard(
     onPayWithUpi: () -> Unit,
     onPayWithCash: () -> Unit,
     onConfirm: () -> Unit,
-    onNotReceived: () -> Unit
+    onNotReceived: () -> Unit,
+    onRequest: () -> Unit,
 ) {
 
     val dimens = AppTheme.dimensions
 
-    var showPaymentDialog by remember {
-        mutableStateOf(false)
-    }
+    var showPaymentDialog by remember { mutableStateOf(false) }
 
-    val isUserDebtor =
-        suggestion.fromUserId == currentUserId
+    val isUserDebtor = suggestion.fromUserId == currentUserId
 
-    val isUserCreditor =
-        suggestion.toUserId == currentUserId
+    val isUserCreditor = suggestion.toUserId == currentUserId
 
-    val hasPendingSettlement =
-        pendingSettlement != null
+    val settlementStatus = pendingSettlement?.status
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -140,10 +136,8 @@ fun SettlementSuggestionCard(
             )
 
             when {
-
-                // You owe the money and haven't requested settlement yet
-                isUserDebtor && !hasPendingSettlement -> {
-
+                // Debtor: no active request or payment
+                isUserDebtor && settlementStatus == null -> {
                     Button(
                         onClick = {
                             showPaymentDialog = true
@@ -158,9 +152,37 @@ fun SettlementSuggestionCard(
                     }
                 }
 
-                // You owe the money and are waiting for confirmation
-                isUserDebtor && hasPendingSettlement -> {
+                // Debtor: creditor has requested payment
+                isUserDebtor && settlementStatus == "REQUESTED" -> {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "$toName requested payment",
+                            color = AccentGold,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
 
+                        Spacer(modifier = Modifier.size(8.dp))
+
+                        Button(
+                            onClick = {
+                                showPaymentDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AccentGold
+                            )
+                        ) {
+                            Text("Pay now")
+                        }
+                    }
+                }
+
+                // Debtor: payment reported, waiting for creditor
+                isUserDebtor && settlementStatus == "PENDING" -> {
                     Text(
                         text = "Waiting for confirmation",
                         modifier = Modifier.fillMaxWidth(),
@@ -170,8 +192,33 @@ fun SettlementSuggestionCard(
                     )
                 }
 
-                // creditor need to confirm
-                isUserCreditor && hasPendingSettlement -> {
+                // Creditor: no active request exists
+                isUserCreditor && settlementStatus == null -> {
+                    Button(
+                        onClick = onRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentGold
+                        )
+                    ) {
+                        Text("Request")
+                    }
+                }
+
+                // Creditor: request sent, awaiting debtor's payment
+                isUserCreditor && settlementStatus == "REQUESTED" -> {
+                    Text(
+                        text = "Payment request sent to $fromName",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = AccentGold,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Creditor: debtor reports payment made
+                isUserCreditor && settlementStatus == "PENDING" -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -188,10 +235,10 @@ fun SettlementSuggestionCard(
                                 text = "Received",
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.Black
-                                )
+                            )
                         }
 
-                        Button (
+                        Button(
                             onClick = onNotReceived,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(22.dp),
@@ -206,8 +253,8 @@ fun SettlementSuggestionCard(
                             )
                         }
                     }
-                }            }
-        }
+                }
+            }        }
     }
 
     // Payment method dialog

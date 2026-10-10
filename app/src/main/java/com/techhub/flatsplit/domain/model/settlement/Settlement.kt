@@ -12,5 +12,6 @@ data class Settlement(
     val transactionId: String? = null,
     val status: String = "PENDING",
     val createdAt: Timestamp = Timestamp.now(),
-    val confirmedAt: Timestamp? = null
+    val confirmedAt: Timestamp? = null,
+    val homeDismissedBy: List<String> = emptyList()
 )

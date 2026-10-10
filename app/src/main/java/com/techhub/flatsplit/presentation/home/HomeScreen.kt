@@ -1,8 +1,11 @@
 package com.techhub.flatsplit.presentation.home
 
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,11 +16,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,9 +32,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
@@ -36,6 +45,10 @@ import com.techhub.flatsplit.presentation.components.AppError
 import com.techhub.flatsplit.presentation.shimmer.HomeShimmer
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BgDark
+import com.techhub.flatsplit.ui.theme.BorderSubtle
+import com.techhub.flatsplit.ui.theme.NegativeRoseBg
+import com.techhub.flatsplit.ui.theme.SurfaceRaised
+import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary
 
 @Composable
@@ -53,6 +66,15 @@ fun HomeScreen(
     val homeState by homeViewModel.uiState.collectAsState()
 
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
+    val context = LocalContext.current
+
+    LaunchedEffect(homeState.actionError) {
+        homeState.actionError?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            homeViewModel.clearActionError()
+        }
+    }
 
     // Load all flats of the logged-in user
     LaunchedEffect(currentUserId) {
@@ -186,6 +208,33 @@ fun HomeScreen(
                             )
                         }
 
+                        items(
+                            items = homeState.settlements.filter { settlement ->
+                                currentUserId != null &&
+                                        settlement.status == "REQUESTED" &&
+                                        settlement.fromUserId == currentUserId &&
+                                        currentUserId !in settlement.homeDismissedBy
+                            },
+                            key = { settlement ->
+                                "payment_request_${settlement.id}"
+                            }
+                        ) { request ->
+
+                            PaymentRequestBanner(
+                                creditorName = userNameMap[request.toUserId]
+                                    ?: "Your flatmate",
+                                amountPaise = request.amount,
+                                onDismiss = {
+                                    currentUserId?.let { userId ->
+                                        homeViewModel.dismissHomeRequest(
+                                            settlementId = request.id,
+                                            userId = userId
+                                        )
+                                    }
+                                }
+                            )
+                        }
+
                         item {
                             Text(
                                 text = "RECENT ACTIVITY",
@@ -235,5 +284,69 @@ private fun categoryIcon(category: String): ImageVector {
         "internet" -> Icons.Outlined.Wifi
 
         else -> Icons.Outlined.ShoppingCart
+    }
+}
+
+@Composable
+private fun PaymentRequestBanner(
+    creditorName: String,
+    amountPaise: Long,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = BorderSubtle
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = NegativeRoseBg
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Payment request",
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "$creditorName requested ${formatRequestAmount(amountPaise)} from you.",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            IconButton(
+                onClick = onDismiss
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Dismiss payment notification",
+                    tint = TextSecondary
+                )
+            }
+        }
+    }
+}
+
+private fun formatRequestAmount(
+    amountPaise: Long
+): String {
+    return if (amountPaise % 100 == 0L) {
+        "₹%,d".format(amountPaise / 100)
+    } else {
+        "₹%,.2f".format(amountPaise / 100.0)
     }
 }
