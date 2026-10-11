@@ -43,6 +43,7 @@ import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BgDark
 import com.techhub.flatsplit.ui.theme.NegativeRose
 import com.techhub.flatsplit.ui.theme.NegativeRoseBg
+import com.techhub.flatsplit.ui.theme.SurfaceRaised
 import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary
 
@@ -270,12 +271,16 @@ fun ManageFlatScreen(
                 memberToRemove = null
             },
             title = {
-                Text("Remove ${member.name}?")
+                Text(
+                    text = "Remove ${member.name}?",
+                    color = TextPrimary
+                    )
             },
             text = {
                 Text(
-                    "${member.name} will no longer be able " +
-                            "to access this flat."
+                    text = "${member.name} will no longer be able " +
+                            "to access this flat.",
+                    color = TextSecondary
                 )
             },
             confirmButton = {
@@ -287,7 +292,10 @@ fun ManageFlatScreen(
                     },
                     enabled = !isActionLoading
                 ) {
-                    Text("Remove")
+                    Text(
+                        text = "Remove",
+                        fontWeight = FontWeight.Medium
+                        )
                 }
             },
             dismissButton = {
@@ -297,9 +305,13 @@ fun ManageFlatScreen(
                         memberToRemove = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Medium
+                        )
                 }
-            }
+            },
+            containerColor = SurfaceRaised
         )
     }
 
@@ -310,7 +322,10 @@ fun ManageFlatScreen(
                 showDeleteDialog = false
             },
             title = {
-                Text("Delete ${room.name}?")
+                Text(
+                    text = "Delete ${room.name}?",
+                    color = TextPrimary
+                )
             },
             text = {
                 Text(
@@ -327,7 +342,10 @@ fun ManageFlatScreen(
                     },
                     enabled = !isActionLoading
                 ) {
-                    Text("Delete")
+                    Text(
+                        text = "Delete",
+                        fontWeight = FontWeight.Medium
+                        )
                 }
             },
             dismissButton = {
@@ -337,9 +355,13 @@ fun ManageFlatScreen(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Cancel")
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-            }
+            },
+            containerColor = SurfaceRaised
         )
     }
 
@@ -350,12 +372,16 @@ fun ManageFlatScreen(
                 showLeaveDialog = false
             },
             title = {
-                Text("Leave ${room.name}?")
+                Text(
+                    text = "Leave ${room.name}?",
+                    color = TextPrimary
+                )
             },
             text = {
                 Text(
-                    "You will no longer have access to this flat's " +
-                            "expenses and settlement records."
+                    text = "You will no longer have access to this flat's " +
+                            "expenses and settlement records.",
+                    color = TextSecondary
                 )
             },
             confirmButton = {
@@ -366,7 +392,10 @@ fun ManageFlatScreen(
                     },
                     enabled = !isActionLoading
                 ) {
-                    Text("Leave Flat")
+                    Text(
+                        text = "Leave Flat",
+                        fontWeight = FontWeight.Medium
+                        )
                 }
             },
             dismissButton = {
@@ -375,7 +404,10 @@ fun ManageFlatScreen(
                         showLeaveDialog = false
                     }
                 ) {
-                    Text("Cancel")
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Medium
+                        )
                 }
             }
         )

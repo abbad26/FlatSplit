@@ -20,7 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.CallSplit
+import androidx.compose.material.icons.outlined.CallSplit
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -132,6 +137,10 @@ fun LoginScreen(
                     LoginHeader()
 
                     Spacer(modifier = Modifier.height(dimensions.medium))
+
+                    LoginFeatures()
+
+                    Spacer(modifier = Modifier.height(dimensions.large))
 
                     AuthOption(
                         image = R.drawable.google,
@@ -451,5 +460,78 @@ fun LoginHeader(){
             fontSize = 16.sp
         )
 
+    }
+}
+
+
+
+
+@Composable
+fun LoginFeatures(modifier: Modifier = Modifier) {
+    val dimens = AppTheme.dimensions
+    Column(
+        modifier = modifier.padding(horizontal = dimens.medium),
+        verticalArrangement = Arrangement.spacedBy(dimens.large)
+    ) {
+        FeatureRow(
+            icon = Icons.Outlined.Receipt,
+            title = "Add expenses fast",
+            subtitle = "Rent, groceries and bills in two taps."
+        )
+        FeatureRow(
+            icon = Icons.Outlined.CallSplit,
+            title = "Split it fairly",
+            subtitle = "Equal, custom amounts or percentages."
+        )
+        FeatureRow(
+            icon = Icons.Outlined.CheckCircle,
+            title = "Settle up",
+            subtitle = "See exactly who owes whom, and clear it."
+        )
+    }
+}
+
+@Composable
+private fun FeatureRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(color = SurfaceRaised.copy(0.5f),
+                    shape = RoundedCornerShape(14.dp))
+                .border(width = 1.dp, color = BorderSubtle,
+                    shape = RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AccentGoldDeep,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary
+            )
+        }
     }
 }

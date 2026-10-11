@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.techhub.flatsplit.domain.model.settlement.Settlement
 import com.techhub.flatsplit.domain.model.settlement.SettlementSuggestion
 import com.techhub.flatsplit.ui.theme.AccentGold
@@ -52,12 +55,11 @@ fun SettlementSuggestionCard(
     toName: String,
     currentUserId: String,
     pendingSettlement: Settlement?,
-    toUpiId: String?,
-    onPayWithUpi: () -> Unit,
     onPayWithCash: () -> Unit,
     onConfirm: () -> Unit,
     onNotReceived: () -> Unit,
     onRequest: () -> Unit,
+    onReportManualUpiPayment: () -> Unit
 ) {
 
     val dimens = AppTheme.dimensions
@@ -70,6 +72,13 @@ fun SettlementSuggestionCard(
 
     val settlementStatus = pendingSettlement?.status
 
+    var showRecordConfirmation by remember {
+        mutableStateOf(false)
+    }
+
+    var paymentMethodToRecord by remember {
+        mutableStateOf<String?>(null)
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -259,12 +268,10 @@ fun SettlementSuggestionCard(
 
     // Payment method dialog
     if (showPaymentDialog) {
-
         AlertDialog(
             onDismissRequest = {
                 showPaymentDialog = false
             },
-
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -289,52 +296,120 @@ fun SettlementSuggestionCard(
                     }
                 }
             },
-
             text = {
                 Text(
-                    text = "You owe $toName ${formatMoney(suggestion.amount)}"
+                    "You owe $toName ${formatMoney(suggestion.amount)}. " +
+                            "Choose the payment method you already used. " +
+                            "FlatSplit records the payment; it does not transfer money."
                 )
             },
-
             confirmButton = {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-
                     Button(
                         onClick = {
-                            if (!toUpiId.isNullOrBlank()) {
-                                showPaymentDialog = false
-                                onPayWithUpi()
-                            }
+                            showPaymentDialog = false
+                            paymentMethodToRecord = "UPI"
+                            showRecordConfirmation = true
                         },
-                        modifier = Modifier.weight(1f),
-                        enabled = !toUpiId.isNullOrBlank()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentGold
+                        )
                     ) {
                         Text(
-                            text = if (toUpiId.isNullOrBlank()) {
-                                "UPI unavailable"
-                            } else {
-                                "Pay with UPI"
-                            }
+                            text = "Online / UPI",
+                            color = Color.Black
                         )
                     }
 
                     Button(
                         onClick = {
                             showPaymentDialog = false
-                            onPayWithCash()
+                            paymentMethodToRecord = "CASH"
+                            showRecordConfirmation = true
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentGold
+                        )
                     ) {
-                        Text("Cash")
+                        Text(
+                            text = "Cash",
+                            color = Color.Black
+                        )
                     }
                 }
             },
+            containerColor = SurfaceRaised
+        )
+    }
 
-            containerColor = SurfaceRaised,
-        )    }
+    if (showRecordConfirmation) {
+        val methodLabel = when (paymentMethodToRecord) {
+            "UPI" -> "online"
+            "CASH" -> "cash"
+            else -> "unknown"
+        }
+
+        AlertDialog(
+            onDismissRequest = {
+                showRecordConfirmation = false
+                paymentMethodToRecord = null
+            },
+            title = {
+                Text("Record $methodLabel payment?")
+            },
+            text = {
+                Text(
+                    "Continue only if you have actually completed " +
+                            "the payment. Your flatmate must still confirm " +
+                            "receipt before balances change."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val method = paymentMethodToRecord
+
+                        showRecordConfirmation = false
+                        paymentMethodToRecord = null
+
+                        when (method) {
+                            "UPI" -> onReportManualUpiPayment()
+                            "CASH" -> onPayWithCash()
+                        }
+                    },
+                    modifier = Modifier.padding(start = 30.dp)
+                ) {
+                    Text(
+                        text = "Confirm payment",
+                        fontWeight = FontWeight.Medium
+                        )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRecordConfirmation = false
+                        paymentMethodToRecord = null
+                    },
+                    modifier = Modifier.padding(end = 10.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
+                        )
+                }
+            },
+            containerColor = SurfaceRaised
+        )
+    }
 }
 
 private fun formatMoney(amountPaise: Long): String {

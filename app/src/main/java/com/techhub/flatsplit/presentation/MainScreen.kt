@@ -31,6 +31,7 @@ import com.techhub.flatsplit.presentation.auth.LoginScreen
 import com.techhub.flatsplit.presentation.feedback.FeedbackScreen
 import com.techhub.flatsplit.presentation.flatroom.FlatsScreen
 import com.techhub.flatsplit.presentation.flatroom.OnFlatCreateScreen
+import com.techhub.flatsplit.presentation.guide.AppGuideScreen
 import com.techhub.flatsplit.presentation.home.HomeScreen
 import com.techhub.flatsplit.presentation.home.HomeViewModel
 import com.techhub.flatsplit.presentation.manageflat.ManageFlatRoute
@@ -44,6 +45,7 @@ import com.techhub.flatsplit.ui.theme.TextFaint
 
 const val FLAT_CREATED_ROUTE = "flat_created/{name}/{inviteCode}"
 const val ADD_EXPENSE_ROUTE = "add_expense/{roomId}"
+const val APP_GUIDE_ROUTE = "app_guide"
 sealed class Screen(
     val route: String,
     val label: String,
@@ -109,6 +111,16 @@ fun MainScreen(
 
     val showBottomBar = screens.any {
         it.route == currentRoute
+    }
+
+    val navigateToMainTab: (String) -> Unit = {route ->
+        navController.navigate(route){
+            popUpTo(Screen.Home.route){
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
     }
 
 
@@ -242,6 +254,7 @@ fun MainScreen(
 
             composable(Screen.Profile.route) {
                 ProfileScreen(
+                    onGuideScreen = { navController.navigate(APP_GUIDE_ROUTE)},
                     onManageFlat = {
                         navController.navigate("manage_flat")
                     },
@@ -266,7 +279,21 @@ fun MainScreen(
             }
 
             composable("feedback"){
-                FeedbackScreen()
+                FeedbackScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable (APP_GUIDE_ROUTE){
+                AppGuideScreen(
+                    onBack = {navController.popBackStack() },
+                    onGoToFlats = {navigateToMainTab(Screen.Flats.route)},
+                    onGoToSettleUp = { navigateToMainTab(Screen.SettleUp.route)},
+                    onGoToProfile = { navigateToMainTab(Screen.Profile.route)}
+
+                )
             }
         }
     }

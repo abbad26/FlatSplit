@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +48,7 @@ import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.BgDark
 import com.techhub.flatsplit.ui.theme.BorderSubtle
 import com.techhub.flatsplit.ui.theme.NegativeRoseBg
+import com.techhub.flatsplit.ui.theme.PositiveTeal
 import com.techhub.flatsplit.ui.theme.SurfaceRaised
 import com.techhub.flatsplit.ui.theme.TextPrimary
 import com.techhub.flatsplit.ui.theme.TextSecondary

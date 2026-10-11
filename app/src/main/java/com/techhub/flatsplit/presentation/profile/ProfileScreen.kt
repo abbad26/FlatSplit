@@ -53,6 +53,7 @@ import com.techhub.flatsplit.ui.theme.TextSecondary
 
 @Composable
 fun ProfileScreen(
+    onGuideScreen: () -> Unit,
     onManageFlat: () -> Unit,
     onFeedback: () -> Unit,
     onLogout: () -> Unit,
@@ -135,20 +136,20 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Payment Details",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(dimens.smallMedium))
-
-                Text(
-                    text = "Add your UPI ID to receive payments from flatmates.",
-                    color = TextSecondary,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+//                Text(
+//                    text = "Payment Details",
+//                    color = TextPrimary,
+//                    style = MaterialTheme.typography.titleLarge,
+//                    fontWeight = FontWeight.Bold
+//                )
+//
+//                Spacer(modifier = Modifier.height(dimens.smallMedium))
+//
+//                Text(
+//                    text = "Add your UPI ID to receive payments from flatmates.",
+//                    color = TextSecondary,
+//                    style = MaterialTheme.typography.bodyMedium
+//                )
 
                 Spacer(modifier = Modifier.height(dimens.medium))
 
@@ -162,121 +163,122 @@ fun ProfileScreen(
                     }
 
                     // Show the saved UPI ID with an Edit button.
-                    uiState.upiId.isNotBlank() && !isEditingUpiId -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = "Your UPI ID",
-                                    color = TextSecondary,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.height(4.dp)
-                                )
-
-                                Text(
-                                    text = uiState.upiId,
-                                    color = TextPrimary,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            TextButton(
-                                onClick = {
-                                    viewModel.clearMessages()
-                                    isEditingUpiId = true
-                                }
-                            ) {
-                                Text(
-                                    text = "Edit",
-                                    color = PositiveTeal
-                                    )
-                            }
-                        }
-                    }
+//                    uiState.upiId.isNotBlank() && !isEditingUpiId -> {
+//                        Row(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            Column(
+//                                modifier = Modifier.weight(1f)
+//                            ) {
+//                                Text(
+//                                    text = "Your UPI ID",
+//                                    color = TextSecondary,
+//                                    style = MaterialTheme.typography.labelMedium
+//                                )
+//
+//                                Spacer(
+//                                    modifier = Modifier.height(4.dp)
+//                                )
+//
+//                                Text(
+//                                    text = uiState.upiId,
+//                                    color = TextPrimary,
+//                                    style = MaterialTheme.typography.titleMedium,
+//                                    fontWeight = FontWeight.SemiBold
+//                                )
+//                            }
+//
+//                            TextButton(
+//                                onClick = {
+//                                    viewModel.clearMessages()
+//                                    isEditingUpiId = true
+//                                }
+//                            ) {
+//                                Text(
+//                                    text = "Edit",
+//                                    color = PositiveTeal
+//                                    )
+//                            }
+//                        }
+//                    }
 
                     // Show the input form for a new UPI ID or when editing.
-                    else -> {
-                        OutlinedTextField(
-                            value = uiState.upiId,
-                            onValueChange = viewModel::onUpiIdChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            label = {
-                                Text("UPI ID")
-                            },
-                            placeholder = {
-                                Text("yourname@bank")
-                            },
-                            singleLine = true,
-                            enabled = !uiState.isSaving
-                        )
-
-                        uiState.error?.let { error ->
-                            Spacer(
-                                modifier = Modifier.height(4.dp)
-                            )
-
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        uiState.successMessage?.let { message ->
-                            Spacer(
-                                modifier = Modifier.height(4.dp)
-                            )
-
-                            Text(
-                                text = message,
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        Spacer(
-                            modifier = Modifier.height(dimens.medium)
-                        )
-
-                        Button(
-                            onClick = {
-                                user?.uid?.let { userId ->
-                                    viewModel.updateUpiId(
-                                        userId = userId,
-                                        enteredUpiId = uiState.upiId
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = user?.uid != null &&
-                                    !uiState.isLoading &&
-                                    !uiState.isSaving,
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            } else {
-                                Text("Save UPI ID")
-                            }
-                        }
-                    }
+//                    else -> {
+//                        OutlinedTextField(
+//                            value = uiState.upiId,
+//                            onValueChange = viewModel::onUpiIdChange,
+//                            modifier = Modifier.fillMaxWidth(),
+//                            label = {
+//                                Text("UPI ID")
+//                            },
+//                            placeholder = {
+//                                Text("yourname@bank")
+//                            },
+//                            singleLine = true,
+//                            enabled = !uiState.isSaving
+//                        )
+//
+//                        uiState.error?.let { error ->
+//                            Spacer(
+//                                modifier = Modifier.height(4.dp)
+//                            )
+//
+//                            Text(
+//                                text = error,
+//                                color = MaterialTheme.colorScheme.error,
+//                                style = MaterialTheme.typography.bodySmall
+//                            )
+//                        }
+//
+//                        uiState.successMessage?.let { message ->
+//                            Spacer(
+//                                modifier = Modifier.height(4.dp)
+//                            )
+//
+//                            Text(
+//                                text = message,
+//                                color = MaterialTheme.colorScheme.primary,
+//                                style = MaterialTheme.typography.bodySmall
+//                            )
+//                        }
+//
+//                        Spacer(
+//                            modifier = Modifier.height(dimens.medium)
+//                        )
+//
+//                        Button(
+//                            onClick = {
+//                                user?.uid?.let { userId ->
+//                                    viewModel.updateUpiId(
+//                                        userId = userId,
+//                                        enteredUpiId = uiState.upiId
+//                                    )
+//                                }
+//                            },
+//                            modifier = Modifier.fillMaxWidth(),
+//                            enabled = user?.uid != null &&
+//                                    !uiState.isLoading &&
+//                                    !uiState.isSaving,
+//                            shape = RoundedCornerShape(18.dp)
+//                        ) {
+//                            if (uiState.isSaving) {
+//                                CircularProgressIndicator(
+//                                    modifier = Modifier.size(20.dp),
+//                                    strokeWidth = 2.dp,
+//                                    color = MaterialTheme.colorScheme.onPrimary
+//                                )
+//                            } else {
+//                                Text("Save UPI ID")
+//                            }
+//                        }
+//                    }
                 }
             }
             Spacer(modifier = Modifier.height(dimens.large))
 
             ManageProfileCard(
+                onGuideScreen = { onGuideScreen()},
                 onManageFlat = {
                     onManageFlat()
                 },

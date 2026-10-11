@@ -1,82 +1,61 @@
 package com.techhub.flatsplit.presentation.settleup
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.techhub.flatsplit.presentation.RoomSelectionViewModel
 import com.techhub.flatsplit.presentation.components.AppError
 import com.techhub.flatsplit.presentation.home.FlatSwitcherDropdown
-import com.techhub.flatsplit.presentation.settleup.upi.createUpiPaymentIntent
-import com.techhub.flatsplit.presentation.settleup.upi.parseUpiPaymentResult
 import com.techhub.flatsplit.presentation.shimmer.SettleUpShimmer
-import android.content.ActivityNotFoundException
-import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import java.util.Locale
 import com.techhub.flatsplit.ui.theme.AppTheme
 import com.techhub.flatsplit.ui.theme.TextSecondary
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun SettleUpScreen(
     viewModel: SettleUpViewModel = hiltViewModel(),
     roomSelectionViewModel: RoomSelectionViewModel
 ) {
-
     val uiState by viewModel.uiState.collectAsState()
-
-    val dimens = AppTheme.dimensions
-
     val roomState by roomSelectionViewModel.uiState.collectAsState()
-
-    val currentUserId =
-        FirebaseAuth.getInstance()
-            .currentUser
-            ?.uid
-            ?: return
-
+    val dimens = AppTheme.dimensions
     val context = LocalContext.current
+    var showPaymentHistory by rememberSaveable { mutableStateOf(false) }
 
-    var pendingRoomId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var pendingFromUserId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var pendingToUserId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var pendingAmount by rememberSaveable {
-        mutableStateOf(0L)
-    }
-    var pendingExistingSettlementId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
+    val currentUserId = FirebaseAuth.getInstance()
+        .currentUser
+        ?.uid
+        ?: return
 
-    // Load all flats of the logged-in user
+    // Load all flats belonging to the logged-in user.
     LaunchedEffect(currentUserId) {
         roomSelectionViewModel.loadRooms(currentUserId)
     }
-
 
     val selectedRoom = roomState.selectedRoom
 
@@ -91,336 +70,205 @@ fun SettleUpScreen(
         ?.balance
         ?: 0L
 
-//    val userNames = uiState.users.associateBy(
-//        keySelector = { it.id },
-//        valueTransform = { it.name }
-//    )
-
     val usersById = uiState.users.associateBy { it.id }
 
-    val upiLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-
-        Log.e(
-            "FlatSplitUPI",
-            "CALLBACK_ENTERED: resultCode=${result.resultCode}, " +
-                    "dataReturned=${result.data != null}, " +
-                    "pendingRoomExists=${pendingRoomId != null}, " +
-                    "pendingAmount=${pendingAmount > 0L}, " +
-                    "extraKeys=${result.data?.extras?.keySet()}"
-        )
-
-        val pending = if (
-            pendingRoomId != null &&
-            pendingFromUserId != null &&
-            pendingToUserId != null &&
-            pendingAmount > 0L
-        ) {
-            PendingUpiSettlement(
-                roomId = pendingRoomId!!,
-                fromUserId = pendingFromUserId!!,
-                toUserId = pendingToUserId!!,
-                amount = pendingAmount,
-                existingSettlementId = pendingExistingSettlementId
-            )
-        } else {
-            null
+    // Display payment records from last 30 days
+    val thirtyDaysAgoMillis = System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L)
+    val paymentHistory = uiState.settlements
+        .filter { settlement ->
+            settlement.status in setOf("PENDING", "CONFIRMED", "NOT_RECEIVED") &&
+                    (settlement.confirmedAt ?: settlement.createdAt).toDate().time >= thirtyDaysAgoMillis
         }
-        // Clear the saved details only after copying them locally.
-        pendingRoomId = null
-        pendingFromUserId = null
-        pendingToUserId = null
-        pendingAmount = 0L
-        pendingExistingSettlementId = null
-
-        if (pending == null) {
-            Log.e("FlatSplitUPI", "No pending settlement details were restored.")
-            return@rememberLauncherForActivityResult
+        .sortedByDescending { settlement ->
+            (settlement.confirmedAt ?: settlement.createdAt).toDate().time
         }
-
-        val upiResult = parseUpiPaymentResult(result.data)
-        val responseString = result.data?.getStringExtra("response")
-
-        val responseKeys = responseString
-            ?.split('&', ';')
-            ?.mapNotNull { part ->
-                val key = part.substringBefore('=').trim()
-                key.takeIf { part.contains('=') && it.isNotBlank() }
-            }
-
-        val extraNames = result.data
-            ?.extras
-            ?.keySet()
-            ?.joinToString()
-
-        val uriQueryNames = result.data
-            ?.data
-            ?.queryParameterNames
-            ?.joinToString()
-
-        val safeStatusFields = listOf(
-            "Status",
-            "status",
-            "STATUS",
-            "txnStatus",
-            "responseCode",
-            "ResponseCode"
-        ).mapNotNull { key ->
-            result.data?.extras?.get(key)?.toString()
-                ?.let { "$key=$it" }
-        }
-
-        Log.e(
-            "FlatSplitUPI",
-            "RETURNED_DETAILS: " +
-                    "resultCode=${result.resultCode}, " +
-                    "extraNames=$extraNames, " +
-                    "responseExtraPresent=${responseString != null}, " +
-                    "uriScheme=${result.data?.data?.scheme}, " +
-                    "uriQueryNames=$uriQueryNames, " +
-                    "statusFields=$safeStatusFields, " +
-                    "parsedStatus=${upiResult.status}, " +
-                    "parsedResponseCode=${upiResult.responseCode}"
-        )
-
-        val status = upiResult.status
-            ?.trim()
-            ?.uppercase(Locale.ROOT)
-
-        val responseCode = upiResult.responseCode?.trim()
-
-        val paymentReportedSuccessful =
-            status in setOf("SUCCESS", "SUCCESSFUL") &&
-                    (responseCode.isNullOrBlank() || responseCode == "00")
-
-        if (paymentReportedSuccessful) {
-            val existingSettlementId = pending.existingSettlementId
-
-            if (existingSettlementId != null) {
-                // Update the creditor's existing request.
-                viewModel.startSettlementPayment(
-                    settlementId = existingSettlementId,
-                    paymentMethod = "UPI",
-                    transactionId = upiResult.transactionId
-                        ?: upiResult.transactionRef                )
-            } else {
-                // No prior request: create a new settlement.
-                viewModel.createSettlement(
-                    roomId = pending.roomId,
-                    fromUserId = pending.fromUserId,
-                    toUserId = pending.toUserId,
-                    amount = pending.amount,
-                    paymentMethod = "UPI",
-                    transactionId = upiResult.transactionId
-                        ?: upiResult.transactionRef                )
-            }
-
-            Toast.makeText(
-                context,
-                "Payment reported successful. Awaiting recipient confirmation.",
-                Toast.LENGTH_LONG
-            ).show()
-        } else {
-            val message = when (status) {
-                "FAILURE", "FAILED" ->
-                    "The UPI app reported payment failure. No settlement was created."
-
-                "SUBMITTED", "PENDING" ->
-                    "Payment status is pending. Check your UPI app before retrying."
-
-                else ->
-                    "No successful payment result was received. Check your transaction history."
-            }
-
-            Toast.makeText(
-                context,
-                message,
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
 
     when {
-
         roomState.isLoading || uiState.isLoading -> {
             SettleUpShimmer()
         }
-        roomState.error != null -> {
 
+        roomState.error != null -> {
             AppError(
                 message = roomState.error!!,
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             )
         }
-        uiState.error != null -> {
 
+        uiState.error != null -> {
             AppError(
                 message = uiState.error!!,
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             )
         }
 
-        roomState.selectedRoom == null -> {
-            // empty ui
+        selectedRoom == null -> {
+            EmptySettleUpState()
         }
+
         else -> {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = dimens.large, vertical = dimens.large),
+                    .padding(
+                        horizontal = dimens.large,
+                        vertical = dimens.large
+                    ),
                 verticalArrangement = Arrangement.spacedBy(dimens.large)
             ) {
-
                 item {
                     FlatSwitcherDropdown(
                         rooms = roomState.rooms,
-                        selectedRoom = roomState.selectedRoom,
+                        selectedRoom = selectedRoom,
                         onRoomSelected = { room ->
                             roomSelectionViewModel.selectRoom(room)
                         }
                     )
                 }
-                item {
 
-                    BalanceSummaryCard(
-                        balance = currentBalance
-                    )
-                }
+                if (showPaymentHistory){
+                    // Dedicated history view, opened from the History action beside the suggestions title.
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(dimens.small)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "PAYMENT HISTORY",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = TextSecondary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { showPaymentHistory = false }) {
+                                    Text(
+                                        text = "← Back",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Payments recorded in the last 30 days",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
-                item {
+                    if (paymentHistory.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No recorded payments in the last 30 days.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = dimens.small)
+                            )
+                        }
+                    } else {
+                        items(
+                            items = paymentHistory,
+                            key = { settlement ->
+                                "history-${settlement.id.ifBlank {
+                                    "${settlement.fromUserId}_${settlement.toUserId}_${settlement.createdAt.seconds}"
+                                }}"
+                            }
+                        ) { settlement ->
+                            val payerName = usersById[settlement.fromUserId]?.name
+                                ?: settlement.fromUserId
+                            val recipientName = usersById[settlement.toUserId]?.name
+                                ?: settlement.toUserId
+                            val historyDate = SimpleDateFormat(
+                                "dd MMM yyyy, hh:mm a",
+                                Locale.getDefault()
+                            ).format((settlement.confirmedAt ?: settlement.createdAt).toDate())
 
-                    Text(
-                        text = "SETTLEMENT SUGGESTIONS",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = TextSecondary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                            PaymentHistoryItem(
+                                payerName = payerName,
+                                recipientName = recipientName,
+                                amountPaise = settlement.amount,
+                                paymentMethod = settlement.paymentMethod,
+                                status = settlement.status,
+                                dateText = historyDate
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        BalanceSummaryCard(balance = currentBalance)
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "SETTLEMENT SUGGESTIONS",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = TextSecondary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { showPaymentHistory = true }) {
+                                Text(
+                                    text = "History →",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    )
+                            }
+                        }
+                    }
 
                 items(
                     items = uiState.suggestions,
-                    key = {
-                        "${it.fromUserId}_${it.toUserId}"
-                    }
+                    key = { "${it.fromUserId}_${it.toUserId}" }
                 ) { suggestion ->
-
                     val pendingSettlement = uiState.settlements.firstOrNull { settlement ->
                         settlement.status in setOf("REQUESTED", "PENDING") &&
                                 settlement.fromUserId == suggestion.fromUserId &&
                                 settlement.toUserId == suggestion.toUserId &&
                                 settlement.amount == suggestion.amount
                     }
-                    val fromUser =
-                        usersById[suggestion.fromUserId]
 
-                    val toUser =
-                        usersById[suggestion.toUserId]
+                    val fromUser = usersById[suggestion.fromUserId]
+                    val toUser = usersById[suggestion.toUserId]
 
                     SettlementSuggestionCard(
                         suggestion = suggestion,
-
-                        fromName = fromUser?.name
-                            ?: suggestion.fromUserId,
-
-                        toName = toUser?.name
-                            ?: suggestion.toUserId,
-
+                        fromName = fromUser?.name ?: suggestion.fromUserId,
+                        toName = toUser?.name ?: suggestion.toUserId,
                         currentUserId = currentUserId,
-
                         pendingSettlement = pendingSettlement,
-
-                        toUpiId = toUser?.upiId,
-
-                        onPayWithUpi = {
-
-                            val room = selectedRoom
-                            val recipient = toUser
-                            val recipientUpiId = recipient?.upiId?.trim()
-
-                            if (room == null || recipient == null ||
-                                recipientUpiId.isNullOrBlank()
-                            ) {
-                                Toast.makeText(
-                                    context,
-                                    "The recipient has not saved a UPI ID.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-
-                            } else {
-
-                                val paymentIntent = createUpiPaymentIntent(
-                                    upiId = recipientUpiId,
-                                    payeeName = recipient.name,
-                                    amountPaise = suggestion.amount,
-                                    note = "FlatSplit settlement"
-                                )
-
-                                pendingRoomId = room.id
-                                pendingFromUserId = suggestion.fromUserId
-                                pendingToUserId = suggestion.toUserId
-                                pendingAmount = suggestion.amount
-
-                                pendingExistingSettlementId = pendingSettlement
-                                    ?.takeIf { it.status == "REQUESTED" }
-                                    ?.id
-                                try {
-
-                                    android.util.Log.e(
-                                        "FlatSplitUPI",
-                                        "LAUNCHING: action=${paymentIntent.action}, " +
-                                                "scheme=${paymentIntent.data?.scheme}, " +
-                                                "amount=${paymentIntent.data?.getQueryParameter("am")}, " +
-                                                "recipientPresent=${!paymentIntent.data
-                                                    ?.getQueryParameter("pa").isNullOrBlank()}"
-                                    )
-                                    upiLauncher.launch(paymentIntent)
-                                } catch (e: ActivityNotFoundException) {
-                                    pendingRoomId = null
-                                    pendingFromUserId = null
-                                    pendingToUserId = null
-                                    pendingAmount = 0L
-                                    pendingExistingSettlementId = null
-
-                                    Toast.makeText(
-                                        context,
-                                        "No compatible UPI app was found.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        },
-
                         onPayWithCash = {
                             val existingSettlement = pendingSettlement
 
                             if (existingSettlement?.status == "REQUESTED") {
-                                // Reuse the creditor's request.
+                                // Reuse the creditor's request and mark the reported method.
                                 viewModel.startSettlementPayment(
                                     settlementId = existingSettlement.id,
                                     paymentMethod = "CASH",
                                     transactionId = null
                                 )
                             } else {
-                                // No request exists, so create a new pending settlement.
-                                selectedRoom?.let { room ->
-                                    viewModel.createSettlement(
-                                        roomId = room.id,
-                                        fromUserId = suggestion.fromUserId,
-                                        toUserId = suggestion.toUserId,
-                                        amount = suggestion.amount,
-                                        paymentMethod = "CASH",
-                                        transactionId = null
-                                    )
-                                }
+                                // Create a pending record; the creditor must confirm receipt.
+                                viewModel.createSettlement(
+                                    roomId = selectedRoom.id,
+                                    fromUserId = suggestion.fromUserId,
+                                    toUserId = suggestion.toUserId,
+                                    amount = suggestion.amount,
+                                    paymentMethod = "CASH",
+                                    transactionId = null
+                                )
                             }
                         },
-
                         onConfirm = {
                             pendingSettlement?.let { settlement ->
-
                                 viewModel.confirmSettlement(
                                     settlementId = settlement.id
                                 )
@@ -428,39 +276,56 @@ fun SettleUpScreen(
                         },
                         onNotReceived = {
                             pendingSettlement?.let { settlement ->
-                                viewModel.markNotReceived(settlementId = settlement.id)
-                            }
-                        },
-                        onRequest = {
-                            selectedRoom?.let { room ->
-                                viewModel.requestSettlement(
-                                    roomId = room.id,
-                                    fromUserId = suggestion.fromUserId,
-                                    toUserId = suggestion.toUserId,
-                                    amount = suggestion.amount
+                                viewModel.markNotReceived(
+                                    settlementId = settlement.id
                                 )
                             }
                         },
+                        onRequest = {
+                            viewModel.requestSettlement(
+                                roomId = selectedRoom.id,
+                                fromUserId = suggestion.fromUserId,
+                                toUserId = suggestion.toUserId,
+                                amount = suggestion.amount
+                            )
+                        },
+                        onReportManualUpiPayment = {
+                            when (pendingSettlement?.status) {
+                                "REQUESTED" -> {
+                                    viewModel.startSettlementPayment(
+                                        settlementId = pendingSettlement.id,
+                                        paymentMethod = "UPI",
+                                        transactionId = null
+                                    )
+                                }
+
+                                null -> {
+                                    viewModel.createSettlement(
+                                        roomId = selectedRoom.id,
+                                        fromUserId = suggestion.fromUserId,
+                                        toUserId = suggestion.toUserId,
+                                        amount = suggestion.amount,
+                                        paymentMethod = "UPI",
+                                        transactionId = null
+                                    )
+                                }
+
+                                else -> {
+                                    Toast.makeText(
+                                        context,
+                                        "A payment is already awaiting confirmation.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
                     )
                 }
-                // Bottom spacing
-                item {
-
-                    Spacer(
-                        modifier = Modifier.height(dimens.large)
-                    )
+                    item {
+                    Spacer(modifier = Modifier.height(dimens.large))
+                    }
                 }
             }
-
         }
     }
 }
-
-
-private data class PendingUpiSettlement(
-    val roomId: String,
-    val fromUserId: String,
-    val toUserId: String,
-    val amount: Long,
-    val existingSettlementId: String? = null
-)

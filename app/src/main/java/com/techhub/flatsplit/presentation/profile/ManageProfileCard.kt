@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.ReadMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +37,7 @@ import com.techhub.flatsplit.ui.theme.TextPrimary
 
 @Composable
 fun ManageProfileCard(
+    onGuideScreen: () -> Unit,
     onManageFlat: () -> Unit,
     onFeedback: () -> Unit
 ) {
@@ -53,6 +55,53 @@ fun ManageProfileCard(
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ReadMore,
+                        contentDescription = "Manage Flat",
+                        tint = AccentGoldDeep
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(22.dp)
+                    )
+
+                    Text(
+                        text = "App Guide",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                IconButton(
+                    onClick = onGuideScreen
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = PositiveTeal.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(dimens.large)
+            )
+
+            HorizontalDivider(
+                color = BorderSubtle
+            )
+
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
