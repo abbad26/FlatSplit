@@ -85,4 +85,6 @@ dependencies {
 
     // build.gradle.kts (app)
     implementation("androidx.core:core-splashscreen:1.2.0")
+
+    implementation(libs.kotlinx.coroutines.play.services)
 }
