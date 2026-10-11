@@ -291,7 +291,7 @@ fun MainScreen(
                     onBack = {navController.popBackStack() },
                     onGoToFlats = {navigateToMainTab(Screen.Flats.route)},
                     onGoToSettleUp = { navigateToMainTab(Screen.SettleUp.route)},
-                    onGoToProfile = { navigateToMainTab(Screen.Profile.route)}
+                    onGoToProfile = { navController.navigate("manage_flat")}
 
                 )
             }

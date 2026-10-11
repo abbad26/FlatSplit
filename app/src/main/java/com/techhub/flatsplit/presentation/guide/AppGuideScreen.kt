@@ -18,11 +18,6 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.Payments
 
-/**
- * A dedicated guide to FlatSplit's current features and payment-recording flow.
- * Money transfers happen outside FlatSplit; this screen explains how users
- * record payments and why the recipient must confirm receipt.
- */
 @Composable
 fun AppGuideScreen(
     onBack: () -> Unit,
